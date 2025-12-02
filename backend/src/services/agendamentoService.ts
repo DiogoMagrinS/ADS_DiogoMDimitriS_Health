@@ -303,9 +303,27 @@ export async function atualizarAgendamento(
     }
   }
 
-  // sincroniza com Google Calendar (se necessário)
-  if (dataMudou || dados.status) {
-    await sincronizarGoogleCalendarSegura('atualizar', agendamentoExistente.profissionalId, id).catch(() => {});
+  // sincroniza com Google Calendar quando houver mudanças
+  // Se o status mudou para CANCELADO, remove o evento do Google Calendar
+  if (statusAlterado && dados.status === StatusAgendamento.CANCELADO) {
+    // Se já existe evento no Google Calendar, remove
+    if (agendamentoExistente.googleEventId) {
+      await sincronizarGoogleCalendarSegura('deletar', agendamentoExistente.profissionalId, id).catch(() => {});
+      // Limpa o googleEventId do banco após deletar
+      await prisma.agendamento.update({
+        where: { id },
+        data: { googleEventId: null },
+      }).catch(() => {});
+    }
+  } else if (dataMudou || statusAlterado || dados.observacoes !== undefined || dados.pacienteId || dados.profissionalId) {
+    // Para qualquer outra mudança, atualiza o evento no Google Calendar
+    // Se não existe evento ainda, cria um novo
+    if (atualizado.googleEventId) {
+      await sincronizarGoogleCalendarSegura('atualizar', atualizado.profissionalId, id).catch(() => {});
+    } else {
+      // Se não tem evento mas o profissional está conectado, cria um novo
+      await sincronizarGoogleCalendarSegura('criar', atualizado.profissionalId, id).catch(() => {});
+    }
   }
 
   return atualizado;
@@ -382,10 +400,15 @@ export async function atualizarObservacoes(id: number, observacoes: string) {
   const agendamento = await prisma.agendamento.findUnique({ where: { id } });
   if (!agendamento) throw new Error('Agendamento não encontrado');
 
-  return prisma.agendamento.update({
+  const atualizado = await prisma.agendamento.update({
     where: { id },
     data: { observacoes: observacoes?.trim() || null }
   });
+
+  // Sincroniza com Google Calendar quando observações são atualizadas
+  await sincronizarGoogleCalendarSegura('atualizar', agendamento.profissionalId, id).catch(() => {});
+
+  return atualizado;
 }
 
 export async function listarHistoricoStatus(agendamentoId: number) {

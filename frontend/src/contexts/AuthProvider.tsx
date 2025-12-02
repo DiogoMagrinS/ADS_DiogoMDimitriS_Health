@@ -17,14 +17,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setIsAuthenticated(true);
             setUser(decoded);
           } else {
-            // Token inválido
             localStorage.removeItem('token');
             setIsAuthenticated(false);
             setUser(null);
           }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
-          // Token inválido ou expirado
           localStorage.removeItem('token');
           setIsAuthenticated(false);
           setUser(null);
@@ -35,13 +32,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    // Verifica imediatamente
     checkAuth();
     
-    // Verifica novamente após um pequeno delay (para casos de redirecionamento)
     const immediateCheck = setTimeout(checkAuth, 50);
     
-    // Verifica a autenticação periodicamente e quando a janela recebe foco
     const interval = setInterval(checkAuth, 5000);
     window.addEventListener('focus', checkAuth);
     window.addEventListener('storage', checkAuth);
@@ -54,11 +48,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-    setUser(null);
-    window.location.href = '/login';
+  const logout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await fetch('http://localhost:3001/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }).catch(() => {
+        });
+      }
+    } catch (error) {
+      console.warn('Erro ao chamar logout no backend:', error);
+    } finally {
+      localStorage.removeItem('token');
+      setIsAuthenticated(false);
+      setUser(null);
+      window.location.href = '/login';
+    }
   };
 
   return (

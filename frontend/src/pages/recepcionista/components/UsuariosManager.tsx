@@ -1,4 +1,3 @@
-// src/pages/recepcionista/components/UsuariosManager.tsx
 import { useEffect, useState } from "react";
 import api from "../../../services/api";
 import { toast } from "react-toastify";
@@ -66,7 +65,6 @@ export default function UsuariosManager() {
     fotoPerfil: "",
   });
 
-  // modal para editar foto
   const [modalFotoAberto, setModalFotoAberto] = useState<boolean>(false);
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<Usuario | null>(null);
   const [novaFotoUrl, setNovaFotoUrl] = useState<string>("");
@@ -181,7 +179,6 @@ export default function UsuariosManager() {
     }
   }
 
-  // Abrir modal de foto
   function abrirModalFoto(u: Usuario): void {
     setUsuarioSelecionado(u);
     setNovaFotoUrl(u.profissional?.fotoPerfil ?? "");
@@ -221,7 +218,6 @@ export default function UsuariosManager() {
     <div className="p-6 bg-white/90 border border-white/40 rounded-xl shadow space-y-6 backdrop-blur-sm text-[var(--ink)]">
       <h2 className="text-2xl font-semibold">Gerenciar Usuários</h2>
 
-      {/* Formulário de cadastro */}
       <form onSubmit={handleCadastrarUsuario} className="bg-white border border-white/40 p-6 rounded-lg space-y-6">
         <div>
           <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Tipo de usuário</label>
@@ -393,7 +389,6 @@ export default function UsuariosManager() {
         </div>
       </form>
 
-      {/* Campo de pesquisa */}
       <div>
         <input
           type="text"
@@ -404,7 +399,6 @@ export default function UsuariosManager() {
         />
       </div>
 
-      {/* Lista de usuários */}
       <div>
         <h3 className="text-lg font-medium text-[var(--ink)] mt-6 mb-4">Usuários cadastrados</h3>
 
@@ -453,7 +447,6 @@ export default function UsuariosManager() {
         )}
       </div>
 
-      {/* Modal editar foto */}
       {modalFotoAberto && usuarioSelecionado && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white/95 rounded-xl p-6 w-full max-w-md border border-white/40 backdrop-blur-lg">

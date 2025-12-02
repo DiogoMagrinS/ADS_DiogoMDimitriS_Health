@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../services/api";
 import { getUserFromToken } from "../../utils/getUserFromToken";
+import { useAuth } from "../../hooks/useAuth";
 import { toast } from "react-toastify";
 import {
   CalendarDays,
@@ -14,6 +15,7 @@ import {
   Calendar,
   Link as LinkIcon,
   Unlink,
+  LogOut,
 } from "lucide-react";
 import GlassPage from "../../components/GlassPage";
 
@@ -42,6 +44,7 @@ interface AgendamentoRaw {
 
 const DashboardProfissional: React.FC = () => {
   const user = getUserFromToken() as DecodedUser | null;
+  const { logout } = useAuth();
   const [agendamentos, setAgendamentos] = useState<AgendamentoRaw[]>([]);
   const [modalAnotacoesAberto, setModalAnotacoesAberto] = useState(false);
   const [agendamentoParaFinalizar, setAgendamentoParaFinalizar] = useState<number | null>(null);
@@ -50,7 +53,6 @@ const DashboardProfissional: React.FC = () => {
   const [verificandoConexao, setVerificandoConexao] = useState(true);
 
 
-  // Buscar agendamentos do profissional
   const fetchAgendamentos = async () => {
     try {
       const response = await api.get("/agendamentos/profissional/me");
@@ -62,7 +64,6 @@ const DashboardProfissional: React.FC = () => {
     }
   };
 
-  // Verificar conexão com Google Calendar
   const verificarConexaoGoogleCalendar = async () => {
     try {
       const response = await api.get("/google-calendar/check");
@@ -75,11 +76,9 @@ const DashboardProfissional: React.FC = () => {
     }
   };
 
-  // Conectar Google Calendar
   const conectarGoogleCalendar = async () => {
     try {
       const response = await api.get("/google-calendar/auth");
-      // Redireciona para a URL de autenticação do Google
       window.location.href = response.data.authUrl;
     } catch (error: any) {
       console.error("Erro ao conectar Google Calendar:", error);
@@ -87,7 +86,6 @@ const DashboardProfissional: React.FC = () => {
     }
   };
 
-  // Desconectar Google Calendar
   const desconectarGoogleCalendar = async () => {
     if (!confirm("Deseja realmente desconectar o Google Calendar?")) {
       return;
@@ -103,18 +101,14 @@ const DashboardProfissional: React.FC = () => {
   };
 
   useEffect(() => {
-    // Verificar se veio do callback do Google Calendar PRIMEIRO
     const urlParams = new URLSearchParams(window.location.search);
     const googleCalendarStatus = urlParams.get("googleCalendar");
     const isRedirect = urlParams.get("redirect");
     
-    // Aguarda um pouco para garantir que o token foi verificado
     const checkTokenAndProcess = () => {
       if (isRedirect === "true") {
-        // Se veio do redirect do Google, verifica se o token ainda existe
         const token = localStorage.getItem('token');
         if (!token) {
-          // Token foi perdido, redireciona para login
           toast.error("Sessão expirada. Por favor, faça login novamente.");
           setTimeout(() => {
             window.location.href = '/login';
@@ -126,12 +120,10 @@ const DashboardProfissional: React.FC = () => {
       if (googleCalendarStatus === "success") {
         toast.success("Google Calendar conectado com sucesso!");
         setGoogleCalendarConectado(true);
-        // Remove o parâmetro da URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (googleCalendarStatus === "error") {
         const message = urlParams.get("message");
         toast.error(`Erro ao conectar Google Calendar: ${message || "Erro desconhecido"}`);
-        // Remove o parâmetro da URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
@@ -139,11 +131,9 @@ const DashboardProfissional: React.FC = () => {
       verificarConexaoGoogleCalendar();
     };
 
-    // Aguarda um pouco para garantir que o AuthProvider verificou o token
     setTimeout(checkTokenAndProcess, 200);
   }, []);
 
-  // Estatísticas
   const total = agendamentos.length;
   const confirmados = agendamentos.filter(a => a.status === "CONFIRMADO").length;
   const cancelados = agendamentos.filter(a => a.status === "CANCELADO").length;
@@ -173,17 +163,14 @@ const DashboardProfissional: React.FC = () => {
     if (!agendamentoParaFinalizar) return;
 
     try {
-      // Primeiro salva as anotações se houver
       if (anotacoes && anotacoes.trim()) {
         await api.patch(`/agendamentos/${agendamentoParaFinalizar}/observacoes`, {
           observacoes: anotacoes.trim()
         });
       }
 
-      // Depois finaliza o agendamento
       await api.patch(`/agendamentos/${agendamentoParaFinalizar}/status`, { status: "FINALIZADO" });
       
-      // Remove da lista
       setAgendamentos(prev => prev.filter(a => a.id !== agendamentoParaFinalizar));
       toast.success(anotacoes.trim() ? "Agendamento finalizado com anotações!" : "Agendamento finalizado com sucesso!");
       fecharModalAnotacoes();
@@ -193,7 +180,6 @@ const DashboardProfissional: React.FC = () => {
     }
   };
 
-  // Gráfico circular simples
   const graficoPercentuais = [
     { cor: "bg-green-500", valor: confirmados },
     { cor: "bg-indigo-500", valor: atendidos },
@@ -251,6 +237,21 @@ const DashboardProfissional: React.FC = () => {
                   Conectar Google Calendar
                 </button>
               )}
+              <button
+                onClick={async () => {
+                  try {
+                    await api.post('/auth/logout');
+                  } catch (error) {
+                    console.warn('Erro ao chamar logout no backend:', error);
+                  }
+                  logout();
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm transition shadow-sm hover:shadow-md"
+                title="Sair"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sair</span>
+              </button>
             </div>
           </div>
         </header>
@@ -418,7 +419,6 @@ const DashboardProfissional: React.FC = () => {
             </div>
           )}
         </section>    
-        {/* Modal de Anotações */}
         {modalAnotacoesAberto && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 border border-[var(--sand-200)]">
@@ -470,7 +470,6 @@ const DashboardProfissional: React.FC = () => {
 
 export default DashboardProfissional;
 
-// Subcomponente
 const StatCard = ({
   title,
   value,

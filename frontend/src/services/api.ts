@@ -31,6 +31,21 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Trata erros de autenticação (401/403) - redireciona para login
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      const currentPath = window.location.pathname;
+      // Só redireciona se não estiver já na página de login
+      if (currentPath !== '/login') {
+        // Remove o token inválido
+        localStorage.removeItem('token');
+        // Redireciona para login com mensagem
+        const redirectPath = encodeURIComponent(currentPath);
+        const message = encodeURIComponent('Sua sessão expirou ou você não tem permissão para acessar esta página. Por favor, faça login novamente.');
+        window.location.href = `/login?redirect=${redirectPath}&message=${message}`;
+      }
+      return Promise.reject(error);
+    }
+
     if (error.code === 'ECONNABORTED') {
       console.error('Timeout: A requisição demorou muito para responder');
       return Promise.reject(new Error('Timeout: O servidor demorou muito para responder'));

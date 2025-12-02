@@ -1,4 +1,3 @@
-// src/pages/recepcionista/DashboardRecepcionista.tsx
 import { useState } from "react";
 import DashboardOverview from "./components/DashboardOverview";
 import UsuariosManager from "./components/UsuariosManager";
@@ -6,7 +5,9 @@ import EspecialidadesManager from "./components/EspecialidadesManager";
 import AgendamentosManager from "./components/AgendamentosManager";
 import GlassPage from "../../components/GlassPage";
 import { getUserFromToken } from "../../utils/getUserFromToken";
-import { User } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import api from "../../services/api";
+import { User, LogOut } from "lucide-react";
 
 type TabKey = "overview" | "usuarios" | "especialidades" | "agendamentos";
 
@@ -20,6 +21,7 @@ const tabs: { key: TabKey; label: string }[] = [
 export default function DashboardRecepcionista() {
   const [tab, setTab] = useState<TabKey>("overview");
   const user = getUserFromToken();
+  const { logout } = useAuth();
 
   return (
     <GlassPage
@@ -42,6 +44,21 @@ export default function DashboardRecepcionista() {
                 Painel do Recepcionista - Gerencie usuários, especialidades e agendamentos
               </p>
             </div>
+            <button
+              onClick={async () => {
+                try {
+                  await api.post('/auth/logout');
+                } catch (error) {
+                  console.warn('Erro ao chamar logout no backend:', error);
+                }
+                logout();
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition shadow-sm hover:shadow-md"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </button>
           </div>
         </header>
         <div className="flex items-center flex-wrap gap-3">

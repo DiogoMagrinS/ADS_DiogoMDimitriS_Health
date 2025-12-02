@@ -10,16 +10,13 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
 const ENCRYPTION_KEY_RAW = process.env.ENCRYPTION_KEY;
 
-// Normaliza a chave de criptografia para ter exatamente 32 bytes
 let ENCRYPTION_KEY: Buffer | null = null;
 if (ENCRYPTION_KEY_RAW) {
   if (ENCRYPTION_KEY_RAW.length === 32) {
     ENCRYPTION_KEY = Buffer.from(ENCRYPTION_KEY_RAW, 'utf8');
   } else if (ENCRYPTION_KEY_RAW.length > 32) {
-    // Se for maior, pega os primeiros 32 caracteres
     ENCRYPTION_KEY = Buffer.from(ENCRYPTION_KEY_RAW.substring(0, 32), 'utf8');
   } else {
-    // Se for menor, preenche com zeros ou usa hash
     const hash = crypto.createHash('sha256').update(ENCRYPTION_KEY_RAW).digest();
     ENCRYPTION_KEY = hash.slice(0, 32);
   }
@@ -35,9 +32,8 @@ if (!ENCRYPTION_KEY) {
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events'];
 
-// Função para criptografar dados
 function encrypt(text: string): string {
-  if (!ENCRYPTION_KEY) return text; // Retorna texto puro se a chave não estiver configurada
+  if (!ENCRYPTION_KEY) return text;
   try {
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
@@ -46,16 +42,14 @@ function encrypt(text: string): string {
     return iv.toString('hex') + ':' + encrypted;
   } catch (error: any) {
     console.error('Erro ao criptografar:', error.message);
-    return text; // Retorna texto puro em caso de erro
+    return text;
   }
 }
 
-// Função para descriptografar dados
 function decrypt(text: string): string {
-  if (!ENCRYPTION_KEY) return text; // Retorna texto puro se a chave não estiver configurada
+  if (!ENCRYPTION_KEY) return text;
   const textParts = text.split(':');
   if (textParts.length !== 2) {
-    // Se não tem o formato esperado, assume que não está criptografado
     return text;
   }
   try {
@@ -67,7 +61,7 @@ function decrypt(text: string): string {
     return decrypted;
   } catch (error: any) {
     console.warn('Erro ao descriptografar, usando texto puro:', error.message);
-    return text; // Retorna o texto original se falhar
+    return text;
   }
 }
 
@@ -88,7 +82,7 @@ export function generateAuthUrl(profissionalId: number): string {
     access_type: 'offline',
     scope: SCOPES,
     prompt: 'consent',
-    state: profissionalId.toString(), // Passa o ID do profissional para o callback
+    state: profissionalId.toString(),
   });
 }
 
@@ -212,7 +206,7 @@ export async function createCalendarEvent(profissionalId: number, agendamentoId:
         timeZone: 'America/Sao_Paulo',
       },
       end: {
-        dateTime: new Date(data.getTime() + 60 * 60 * 1000).toISOString(), // Duração de 1 hora
+        dateTime: new Date(data.getTime() + 60 * 60 * 1000).toISOString(),
         timeZone: 'America/Sao_Paulo',
       },
       attendees: [
@@ -271,12 +265,18 @@ export async function updateCalendarEvent(profissionalId: number, agendamentoId:
     },
   });
 
-  if (!agendamento || !agendamento.googleEventId) {
-    console.warn(`Agendamento ${agendamentoId} não encontrado ou não possui evento no Google Calendar para atualizar.`);
+  if (!agendamento) {
+    console.warn(`Agendamento ${agendamentoId} não encontrado.`);
     return;
   }
 
-  const { paciente, data, observacoes } = agendamento;
+  if (!agendamento.googleEventId) {
+    console.log(`[Google Calendar] Agendamento ${agendamentoId} não tem evento no Google Calendar. Criando novo evento...`);
+    await createCalendarEvent(profissionalId, agendamentoId);
+    return;
+  }
+
+  const { paciente, data, observacoes, status } = agendamento;
   const profissional = agendamento.profissional;
 
   if (!profissional.googleRefreshToken) {
@@ -288,9 +288,23 @@ export async function updateCalendarEvent(profissionalId: number, agendamentoId:
     const auth = await getAuthenticatedClient(profissional.id);
     const calendar = google.calendar({ version: 'v3', auth });
 
+    let summary = `Consulta com ${paciente.nome} (${profissional.especialidade.nome})`;
+    if (status === 'FINALIZADO') {
+      summary = `✅ ${summary} - Finalizado`;
+    } else if (status === 'CONFIRMADO') {
+      summary = `✓ ${summary} - Confirmado`;
+    } else if (status === 'CANCELADO') {
+      summary = `❌ ${summary} - Cancelado`;
+    }
+
+    let description = `Paciente: ${paciente.nome}\nEmail: ${paciente.email}\nTelefone: ${paciente.telefone || 'N/A'}\nStatus: ${status}`;
+    if (observacoes) {
+      description += `\n\nObservações:\n${observacoes}`;
+    }
+
     const event = {
-      summary: `Consulta com ${paciente.nome} (${profissional.especialidade.nome})`,
-      description: `Paciente: ${paciente.nome}\nEmail: ${paciente.email}\nTelefone: ${paciente.telefone || 'N/A'}\nObservações: ${observacoes || 'N/A'}`,
+      summary,
+      description,
       start: {
         dateTime: data.toISOString(),
         timeZone: 'America/Sao_Paulo',
@@ -303,6 +317,13 @@ export async function updateCalendarEvent(profissionalId: number, agendamentoId:
         { email: paciente.email },
         { email: profissional.usuario.email },
       ],
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: 'email', minutes: 24 * 60 },
+          { method: 'popup', minutes: 10 },
+        ],
+      },
     };
 
     await calendar.events.update({
@@ -310,10 +331,19 @@ export async function updateCalendarEvent(profissionalId: number, agendamentoId:
       eventId: agendamento.googleEventId,
       requestBody: event,
     });
-    console.log(`Evento do Google Calendar atualizado para agendamento ${agendamentoId}`);
+    console.log(`[Google Calendar] ✅ Evento atualizado para agendamento ${agendamentoId} (Status: ${status})`);
   } catch (error: any) {
-    console.error(`Erro ao atualizar evento no Google Calendar para agendamento ${agendamentoId}:`, error.message);
-    throw new Error(`Erro ao atualizar evento no Google Calendar: ${error.message}`);
+    console.error(`[Google Calendar] ❌ Erro ao atualizar evento para agendamento ${agendamentoId}:`, error.message);
+    if (error.response?.status === 404) {
+      console.log(`[Google Calendar] Evento não encontrado no Google Calendar. Criando novo evento...`);
+      await prisma.agendamento.update({
+        where: { id: agendamentoId },
+        data: { googleEventId: null },
+      });
+      await createCalendarEvent(profissionalId, agendamentoId);
+    } else {
+      throw new Error(`Erro ao atualizar evento no Google Calendar: ${error.message}`);
+    }
   }
 }
 

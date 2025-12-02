@@ -20,7 +20,6 @@ export async function postAvaliacao(req: Request, res: Response) {
       return res.status(400).json({ erro: 'agendamentoId e nota são obrigatórios.' });
     }
 
-    // Busca o agendamento para obter o profissionalId
     const agendamento = await prisma.agendamento.findUnique({
       where: { id: parseInt(agendamentoId) },
       include: { profissional: true }

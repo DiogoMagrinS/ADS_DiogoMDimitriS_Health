@@ -9,7 +9,6 @@ export async function authGoogleCalendar(req: Request, res: Response) {
   }
 
   try {
-    // Busca o profissional associado ao usuário
     const profissional = await prisma.profissional.findUnique({
       where: { usuarioId: usuario.id },
     });
@@ -50,8 +49,6 @@ export async function googleCalendarCallback(req: Request, res: Response) {
 
     await setCredentials(profissional.id, tokens);
 
-    // Redireciona para o frontend com mensagem de sucesso
-    // Usa um redirect com hash para preservar a sessão
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/dashboard/profissional?googleCalendar=success&redirect=true`);
 

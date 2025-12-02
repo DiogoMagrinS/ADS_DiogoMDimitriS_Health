@@ -15,9 +15,6 @@ export default function EspecialidadesManager(): JSX.Element {
   const [editando, setEditando] = useState<Especialidade | null>(null);
   const [carregando, setCarregando] = useState<boolean>(false);
 
-  // =============================
-  // 🔹 Carregar especialidades
-  // =============================
   const carregarEspecialidades = async (): Promise<void> => {
     try {
       setCarregando(true);
@@ -35,9 +32,6 @@ export default function EspecialidadesManager(): JSX.Element {
     void carregarEspecialidades();
   }, []);
 
-  // =============================
-  // 🔹 Criar especialidade
-  // =============================
   const handleCriar = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!novaEspecialidade.trim()) {
@@ -56,9 +50,6 @@ export default function EspecialidadesManager(): JSX.Element {
     }
   };
 
-  // =============================
-  // 🔹 Editar especialidade
-  // =============================
   const handleSalvarEdicao = async (): Promise<void> => {
     if (!editando) return;
 
@@ -75,9 +66,6 @@ export default function EspecialidadesManager(): JSX.Element {
     }
   };
 
-  // =============================
-  // 🔹 Excluir especialidade
-  // =============================
   const handleExcluir = async (id: number): Promise<void> => {
     const confirmar = confirm("Tem certeza que deseja excluir esta especialidade?");
     if (!confirmar) return;
@@ -96,7 +84,6 @@ export default function EspecialidadesManager(): JSX.Element {
     <div className="bg-white/90 rounded-xl shadow p-6 space-y-6 border border-white/40 backdrop-blur-sm text-[var(--ink)]">
       <h2 className="text-2xl font-bold">Gerenciar Especialidades</h2>
 
-      {/* Adicionar nova */}
       <form onSubmit={handleCriar} className="flex gap-2">
         <input
           type="text"
@@ -113,7 +100,6 @@ export default function EspecialidadesManager(): JSX.Element {
         </button>
       </form>
 
-      {/* Tabela */}
       {carregando ? (
         <p className="text-[var(--text-muted)]">Carregando especialidades...</p>
       ) : especialidades.length === 0 ? (

@@ -16,7 +16,6 @@ import {
   Star,
   X,
 } from 'lucide-react';
-import 'react-toastify/dist/ReactToastify.css';
 import GlassPage from '../../components/GlassPage';
 
 interface Especialidade {

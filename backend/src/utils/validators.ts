@@ -1,4 +1,3 @@
-// Utilitários de validação
 
 export function validarEmail(email: string): boolean {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,12 +22,10 @@ export function validarNome(nome: string): { valida: boolean; erro?: string } {
 }
 
 export function validarTelefone(telefone: string | null | undefined): { valida: boolean; erro?: string } {
-  if (!telefone) return { valida: true }; // Telefone é opcional
+  if (!telefone) return { valida: true };
   
-  // Remove caracteres não numéricos
   const apenasNumeros = telefone.replace(/\D/g, '');
   
-  // Valida se tem entre 10 e 11 dígitos (formato brasileiro)
   if (apenasNumeros.length < 10 || apenasNumeros.length > 11) {
     return { valida: false, erro: 'Telefone inválido. Use o formato (XX) XXXXX-XXXX' };
   }
@@ -38,7 +35,7 @@ export function validarTelefone(telefone: string | null | undefined): { valida: 
 
 export function validarDataFutura(data: Date): { valida: boolean; erro?: string } {
   const agora = new Date();
-  agora.setHours(0, 0, 0, 0); // Remove horas para comparar apenas a data
+  agora.setHours(0, 0, 0, 0);
   
   const dataAgendamento = new Date(data);
   dataAgendamento.setHours(0, 0, 0, 0);

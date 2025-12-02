@@ -4,8 +4,12 @@ import {
   criarEspecialidade,
   excluirEspecialidade,
 } from "../controllers/especialidadeController";
+import { autenticarToken } from "../middlewares/authMiddleware";
 
 const router = Router();
+
+// Todas as rotas de especialidades requerem autenticação
+router.use(autenticarToken);
 
 router.get("/", listarEspecialidades);
 router.post("/", criarEspecialidade);

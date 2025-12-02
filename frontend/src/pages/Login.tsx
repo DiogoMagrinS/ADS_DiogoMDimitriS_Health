@@ -1,9 +1,9 @@
-// src/pages/Login.tsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import api, { detectBackendPort } from "../services/api";
 import { jwtDecode } from "jwt-decode";
 import GlassPage from "../components/GlassPage";
+import { AlertCircle } from "lucide-react";
 
 interface DecodedToken {
   id: number;
@@ -18,14 +18,25 @@ export default function Login() {
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // Detecta a porta do backend ao montar o componente
   useEffect(() => {
     detectBackendPort().catch((err) => {
       console.warn('Erro ao detectar porta do backend:', err);
     });
   }, []);
+
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message) {
+      setInfoMessage(decodeURIComponent(message));
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('message');
+      navigate(`/login?${newSearchParams.toString()}`, { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,31 +47,33 @@ export default function Login() {
       const res = await api.post("/auth/login", { email, senha });
       const token = res.data.token;
 
-      // Armazena o token no localStorage
       localStorage.setItem("token", token);
 
-      // Decodifica o token JWT para obter o tipo do usuário
       const decoded = jwtDecode<DecodedToken>(token);
 
-      // Redireciona conforme o tipo de usuário
-      switch (decoded.tipo) {
-        case "PACIENTE":
-          navigate("/dashboard/paciente");
-          break;
-        case "PROFISSIONAL":
-          navigate("/dashboard/profissional");
-          break;
-        case "RECEPCIONISTA":
-          navigate("/dashboard/recepcionista");
-          break;
-        default:
-          navigate("/dashboard");
-          break;
+      const redirectPath = searchParams.get('redirect');
+      
+      if (redirectPath && redirectPath.startsWith('/')) {
+        navigate(redirectPath);
+      } else {
+        switch (decoded.tipo) {
+          case "PACIENTE":
+            navigate("/dashboard/paciente");
+            break;
+          case "PROFISSIONAL":
+            navigate("/dashboard/profissional");
+            break;
+          case "RECEPCIONISTA":
+            navigate("/dashboard/recepcionista");
+            break;
+          default:
+            navigate("/dashboard");
+            break;
+        }
       }
     } catch (err: any) {
       console.error("Erro no login:", err);
       
-      // Mensagens de erro mais específicas
       if (err.message?.includes("Timeout") || err.message?.includes("timeout")) {
         setError("Timeout: O servidor demorou muito para responder. Verifique se o servidor está rodando.");
       } else if (err.message?.includes("conexão") || err.message?.includes("Network Error") || err.code === "ERR_NETWORK") {
@@ -129,6 +142,13 @@ export default function Login() {
             />
           </div>
         </div>
+
+        {infoMessage && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm shadow-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{infoMessage}</span>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm shadow-sm">

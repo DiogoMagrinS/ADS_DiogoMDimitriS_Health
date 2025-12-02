@@ -12,7 +12,6 @@ export async function listarUsuarios() {
       tipo: true,
       criadoEm: true,
       telefone: true,
-      // Não retorna a senha
     },
   });
 }
@@ -39,7 +38,6 @@ export async function criarUsuario(dados: {
   senha: string;
   tipo: string;
 }) {
-  // Validações
   const nomeValido = validarNome(dados.nome);
   if (!nomeValido.valida) throw new Error(nomeValido.erro);
 
@@ -50,7 +48,6 @@ export async function criarUsuario(dados: {
   const senhaValida = validarSenha(dados.senha);
   if (!senhaValida.valida) throw new Error(senhaValida.erro);
 
-  // Verifica se email já existe
   const emailExistente = await prisma.usuario.findUnique({
     where: { email: dados.email.toLowerCase().trim() },
   });
@@ -58,7 +55,6 @@ export async function criarUsuario(dados: {
     throw new Error('Email já cadastrado');
   }
 
-  // Sanitiza e normaliza
   const nomeSanitizado = sanitizarString(dados.nome);
   const emailNormalizado = dados.email.toLowerCase().trim();
   const senhaHash = await bcrypt.hash(dados.senha, 10);
@@ -97,7 +93,6 @@ export async function atualizarUsuario(
       throw new Error('Email inválido');
     }
     const emailNormalizado = dados.email.toLowerCase().trim();
-    // Verifica se email já existe em outro usuário
     const emailExistente = await prisma.usuario.findFirst({
       where: { 
         email: emailNormalizado,

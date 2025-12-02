@@ -1,5 +1,3 @@
-// src/controllers/agendamentoController.ts
-// Correção: implementa os endpoints usando o service unificado; validações e mensagens claras
 import { Request, Response } from 'express';
 import {
   listarAgendamentos,
@@ -87,7 +85,6 @@ export async function deleteAgendamento(req: Request, res: Response) {
   }
 }
 
-// Lista agendamentos do paciente autenticado
 export async function listarAgendamentosUsuario(req: Request, res: Response) {
   try {
     const usuario = (req as any).usuario;
@@ -103,7 +100,6 @@ export async function listarAgendamentosUsuario(req: Request, res: Response) {
   }
 }
 
-// Lista agendamentos do profissional autenticado (opcional query data=YYYY-MM-DD)
 export async function listarAgendamentosProfissional(req: Request, res: Response) {
   try {
     const usuario = (req as any).usuario;
@@ -170,7 +166,6 @@ export async function getHistoricoStatus(req: Request, res: Response) {
   }
 }
 
-// Atualizar status do agendamento (com envio de notificações)
 export async function atualizarStatus(req: Request, res: Response) {
   try {
     const id = parseInt(req.params.id);
@@ -180,7 +175,6 @@ export async function atualizarStatus(req: Request, res: Response) {
       return res.status(400).json({ erro: 'Status inválido.' });
     }
 
-    // buscar antes para compor notificações
     const agendamentoAntes = await prisma.agendamento.findUnique({
       where: { id },
       include: {
@@ -193,7 +187,6 @@ export async function atualizarStatus(req: Request, res: Response) {
 
     if (!agendamentoAntes) return res.status(404).json({ erro: 'Agendamento não encontrado.' });
 
-    // atualiza status
     const atualizado = await prisma.agendamento.update({
       where: { id },
       data: { status },
@@ -205,7 +198,6 @@ export async function atualizarStatus(req: Request, res: Response) {
       }
     });
 
-    // importar notificacaoService dinamicamente (pode não existir)
     try {
       const { enviarNotificacao } = await import('../services/notificacaoService');
       if (status === 'FINALIZADO' && atualizado.paciente?.telefone) {
@@ -247,10 +239,13 @@ export async function atualizarStatus(req: Request, res: Response) {
       console.warn('notificacaoService não disponível ou falhou (não crítico):', e);
     }
 
-    // sincroniza com google calendar (não crítico)
     try {
       const googleMod = await import('../services/googleCalendarService');
-      if (googleMod && googleMod.updateCalendarEvent) {
+      if (status === 'CANCELADO' && agendamentoAntes.googleEventId) {
+        if (googleMod && googleMod.deleteCalendarEvent) {
+          await googleMod.deleteCalendarEvent(agendamentoAntes.profissionalId, id);
+        }
+      } else if (googleMod && googleMod.updateCalendarEvent) {
         await googleMod.updateCalendarEvent(agendamentoAntes.profissionalId, id);
       }
     } catch (e) {

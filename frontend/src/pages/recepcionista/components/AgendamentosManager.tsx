@@ -71,7 +71,6 @@ export default function AgendamentosManager() {
     }
   };
 
-  // 🔹 Filtros e busca
   const termo = filtro.toLowerCase();
   const agendamentosFiltrados = agendamentos.filter((a) => {
     const nomeProf = a.profissional?.usuario?.nome?.toLowerCase() ?? "";
@@ -80,7 +79,6 @@ export default function AgendamentosManager() {
     return statusOk && (nomeProf.includes(termo) || nomePac.includes(termo));
   });
 
-  // 🔹 Agrupar agendamentos por profissional
   const agendamentosPorProfissional = agendamentosFiltrados.reduce<
     Record<number, Agendamento[]>
   >((acc, agendamento) => {
@@ -110,7 +108,6 @@ export default function AgendamentosManager() {
       </h1>
 
 
-        {/* 🔹 Filtros */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <input
             type="text"
@@ -136,7 +133,6 @@ export default function AgendamentosManager() {
           </select>
         </div>
 
-        {/* 🔹 Agrupamento */}
         {profissionaisOrdenados.length === 0 ? (
           <div className="text-center text-[var(--text-muted)] mt-10">
             Nenhum agendamento encontrado.
@@ -149,7 +145,7 @@ export default function AgendamentosManager() {
                   src={
                     prof.fotoPerfil && prof.fotoPerfil.trim() !== ""
                       ? prof.fotoPerfil
-                      : `https://i.pravatar.cc/80?u=${prof.id}`
+                      : `https://i.pravatar.cc/100?u=${prof.id}`
                   }
                   alt={prof.usuario.nome}
                   className="w-12 h-12 rounded-full border"
@@ -206,7 +202,6 @@ export default function AgendamentosManager() {
                         <Clock className="w-4 h-4 text-[var(--sand-300)] ml-2" /> {horaFormatada}
                       </div>
 
-                      {/* 🔹 Ações */}
                       {a.status !== "CANCELADO" && (
                         <div className="mt-4 flex flex-wrap gap-2">
                           {a.status === "AGENDADO" && (

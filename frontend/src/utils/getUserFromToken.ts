@@ -1,4 +1,3 @@
-// src/utils/getUserFromToken.ts
 import { jwtDecode } from 'jwt-decode';
 export interface DecodedToken {
   id: number;

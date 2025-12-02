@@ -7,7 +7,6 @@ export async function criarAvaliacao(data: {
   nota: number;
   comentario?: string;
 }) {
-  // Verifica se o agendamento existe e está finalizado
   const agendamento = await prisma.agendamento.findUnique({
     where: { id: data.agendamentoId }
   });
@@ -20,7 +19,6 @@ export async function criarAvaliacao(data: {
     throw new Error('Apenas agendamentos finalizados podem ser avaliados');
   }
 
-  // Verifica se já existe uma avaliação para este agendamento
   const avaliacaoExistente = await prisma.avaliacao.findUnique({
     where: { agendamentoId: data.agendamentoId }
   });
@@ -29,12 +27,10 @@ export async function criarAvaliacao(data: {
     throw new Error('Este agendamento já foi avaliado');
   }
 
-  // Verifica se o paciente é o dono do agendamento
   if (agendamento.pacienteId !== data.pacienteId) {
     throw new Error('Você não pode avaliar este agendamento');
   }
 
-  // Valida a nota (1 a 5)
   if (data.nota < 1 || data.nota > 5) {
     throw new Error('A nota deve ser entre 1 e 5');
   }
@@ -94,7 +90,7 @@ export async function obterEstatisticasAvaliacao(profissionalId: number) {
   }, { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as Record<number, number>);
 
   return {
-    media: Math.round(media * 10) / 10, // Arredonda para 1 casa decimal
+    media: Math.round(media * 10) / 10,
     total,
     distribuicao
   };
@@ -110,11 +106,9 @@ export async function listarProfissionaisComAvaliacoes() {
     }
   });
 
-  // Adiciona estatísticas de avaliação para cada profissional
   const profissionaisComStats = await Promise.all(
     profissionais.map(async (prof) => {
       const stats = await obterEstatisticasAvaliacao(prof.id);
-      // Busca avaliações do profissional
       const avaliacoes = await prisma.avaliacao.findMany({
         where: { profissionalId: prof.id },
         include: {

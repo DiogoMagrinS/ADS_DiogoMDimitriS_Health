@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.ts
 import { createContext } from 'react';
 import type { DecodedToken } from '../utils/getUserFromToken';
 
