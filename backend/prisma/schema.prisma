@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Connection URL moved to prisma.config.ts
+  url      = env("DATABASE_URL")
 }
 
 model Usuario {
@@ -15,6 +15,7 @@ model Usuario {
   tipo             TipoUsuario
   criadoEm         DateTime      @default(now())
   telefone         String?
+  fotoPerfil       String?
   agendamentos     Agendamento[] @relation("PacienteAgendamentos")
   avaliacoesFeitas Avaliacao[]
   notificacoes     Notificacao[]

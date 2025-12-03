@@ -16,6 +16,7 @@ import {
   Link as LinkIcon,
   Unlink,
   LogOut,
+  Star,
 } from "lucide-react";
 import GlassPage from "../../components/GlassPage";
 
@@ -42,6 +43,19 @@ interface AgendamentoRaw {
   observacoes?: string | null;
 }
 
+interface Avaliacao {
+  id: number;
+  nota: number;
+  comentario?: string | null;
+  criadoEm: string;
+  paciente: {
+    nome: string;
+  };
+  agendamento: {
+    data: string;
+  };
+}
+
 const DashboardProfissional: React.FC = () => {
   const user = getUserFromToken() as DecodedUser | null;
   const { logout } = useAuth();
@@ -51,6 +65,7 @@ const DashboardProfissional: React.FC = () => {
   const [anotacoes, setAnotacoes] = useState("");
   const [googleCalendarConectado, setGoogleCalendarConectado] = useState(false);
   const [verificandoConexao, setVerificandoConexao] = useState(true);
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
 
 
   const fetchAgendamentos = async () => {
@@ -61,6 +76,16 @@ const DashboardProfissional: React.FC = () => {
       console.error("Erro ao buscar agendamentos:", error);
       const errorMessage = error.response?.data?.erro || error.message || "Erro ao carregar agendamentos.";
       toast.error(errorMessage);
+    }
+  };
+
+  const fetchAvaliacoes = async () => {
+    try {
+      const response = await api.get<Avaliacao[]>("/avaliacoes/me");
+      setAvaliacoes(response.data);
+    } catch (error: any) {
+      console.error("Erro ao buscar avaliações do profissional:", error);
+      // não mostra toast aqui pra não poluir se endpoint ainda não estiver configurado
     }
   };
 
@@ -128,6 +153,7 @@ const DashboardProfissional: React.FC = () => {
       }
 
       fetchAgendamentos();
+      fetchAvaliacoes();
       verificarConexaoGoogleCalendar();
     };
 
@@ -284,6 +310,86 @@ const DashboardProfissional: React.FC = () => {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Minhas Avaliações */}
+        <section className="bg-white/90 rounded-2xl p-6 shadow-sm border border-white/40 backdrop-blur-sm">
+          <h2 className="text-lg font-semibold text-[var(--ink)] mb-4 flex items-center gap-2">
+            <Star className="w-5 h-5 text-yellow-500" /> Minhas Avaliações
+          </h2>
+          {avaliacoes.length === 0 ? (
+            <p className="text-[var(--text-muted)] text-sm">
+              Você ainda não possui avaliações registradas pelos pacientes.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {avaliacoes.map((av) => (
+                <div
+                  key={av.id}
+                  className="rounded-xl border border-[var(--sand-200)] bg-white p-4 shadow-sm hover:shadow-md transition"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${
+                              i <= av.nota ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm font-semibold text-[var(--ink)]">
+                        {av.nota.toFixed(1)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-[var(--text-muted)]">
+                      {new Date(av.criadoEm).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-[var(--text-muted)] mb-1">
+                    Paciente: <span className="font-medium text-[var(--ink)]">{av.paciente.nome}</span>
+                  </p>
+                  <p className="text-xs text-[var(--text-muted)] mb-2">
+                    Consulta em:{" "}
+                    {new Date(av.agendamento.data).toLocaleString("pt-BR", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </p>
+
+                  {av.comentario && (
+                    <p className="text-sm text-[var(--text-muted)] mt-2 italic">
+                      "{av.comentario}"
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Legenda de status */}
+        <section className="bg-white/80 rounded-xl border border-white/60 px-4 py-3 text-xs text-[var(--text-muted)] flex flex-wrap gap-3 items-center">
+          <span className="font-semibold text-[var(--ink)] mr-1">Legenda de status:</span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#f5eadc] border border-[var(--sand-300)]" />
+            <span>AGENDADO / PENDENTE</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[var(--sage-100)] border border-[var(--sage-200)]" />
+            <span>CONFIRMADO</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#f8dcd6] border border-[#f1b5aa]" />
+            <span>CANCELADO</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[var(--sand-200)] border border-[var(--sand-300)]" />
+            <span>FINALIZADO / ATENDIDO</span>
+          </span>
         </section>
 
         <section className="bg-white/90 rounded-2xl p-6 shadow-sm border border-white/40 backdrop-blur-sm">

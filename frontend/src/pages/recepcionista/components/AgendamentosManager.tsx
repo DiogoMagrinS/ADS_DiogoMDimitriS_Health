@@ -133,6 +133,23 @@ export default function AgendamentosManager() {
           </select>
         </div>
 
+        {/* Legenda de status */}
+        <div className="mb-6 bg-white/80 rounded-xl border border-white/60 px-4 py-3 text-xs text-[var(--text-muted)] flex flex-wrap gap-3 items-center">
+          <span className="font-semibold text-[var(--ink)] mr-1">Legenda de status:</span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[var(--sand-200)] border border-[var(--sand-300)]" />
+            <span>AGENDADO</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[var(--sage-100)] border border-[var(--sage-200)]" />
+            <span>CONFIRMADO</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#f8dcd6] border border-[#f1b5aa]" />
+            <span>CANCELADO</span>
+          </span>
+        </div>
+
         {profissionaisOrdenados.length === 0 ? (
           <div className="text-center text-[var(--text-muted)] mt-10">
             Nenhum agendamento encontrado.

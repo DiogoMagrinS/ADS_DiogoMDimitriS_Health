@@ -347,6 +347,7 @@ export async function listarAgendamentosDoUsuario(usuarioId: number) {
     where: { pacienteId: usuarioId },
     orderBy: { data: 'asc' },
     include: {
+      avaliacoes: true,
       profissional: {
         include: {
           usuario: true,

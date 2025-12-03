@@ -187,6 +187,27 @@ export async function atualizarStatus(req: Request, res: Response) {
 
     if (!agendamentoAntes) return res.status(404).json({ erro: 'Agendamento não encontrado.' });
 
+    // Regra 1: não permitir alterar agendamentos já cancelados ou finalizados
+    if (['CANCELADO', 'FINALIZADO'].includes(agendamentoAntes.status)) {
+      return res.status(400).json({
+        erro: 'Este agendamento já foi encerrado e não pode mais ser alterado.',
+      });
+    }
+
+    // Regra 2: cancelamento só é permitido até 2 horas antes da consulta
+    if (status === 'CANCELADO') {
+      const agora = new Date();
+      const dataAgendamento = new Date(agendamentoAntes.data);
+      const diffMs = dataAgendamento.getTime() - agora.getTime();
+      const duasHorasMs = 2 * 60 * 60 * 1000;
+
+      if (diffMs < duasHorasMs) {
+        return res.status(400).json({
+          erro: 'Cancelamentos só são permitidos até 2 horas antes do horário da consulta. Entre em contato com a clínica.',
+        });
+      }
+    }
+
     const atualizado = await prisma.agendamento.update({
       where: { id },
       data: { status },

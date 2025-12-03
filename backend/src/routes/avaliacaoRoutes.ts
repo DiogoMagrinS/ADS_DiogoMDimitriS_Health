@@ -3,7 +3,8 @@ import {
   postAvaliacao,
   getAvaliacoesProfissional,
   getEstatisticasAvaliacao,
-  getProfissionaisComAvaliacoes
+  getProfissionaisComAvaliacoes,
+  getMinhasAvaliacoes
 } from '../controllers/avaliacaoController';
 import { autenticarToken } from '../middlewares/authMiddleware';
 
@@ -13,6 +14,7 @@ router.use(autenticarToken);
 
 router.post('/', postAvaliacao);
 router.get('/profissionais', getProfissionaisComAvaliacoes);
+router.get('/me', getMinhasAvaliacoes);
 router.get('/profissional/:id', getAvaliacoesProfissional);
 router.get('/profissional/:id/estatisticas', getEstatisticasAvaliacao);
 

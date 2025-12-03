@@ -48,7 +48,12 @@ interface Agendamento {
   status: string;
   profissional: Profissional;
   observacoes?: string | null;
-  avaliacoes?: Array<{ id: number; nota: number; comentario?: string | null }>;
+  // Pode vir como array (ajuste local) ou objeto único do backend
+  avaliacoes?: Array<{ id: number; nota: number; comentario?: string | null }> | {
+    id: number;
+    nota: number;
+    comentario?: string | null;
+  } | null;
 }
 
 interface ProfissionalComAvaliacao extends Profissional {
@@ -316,168 +321,7 @@ export default function DashboardPaciente() {
           </div>
         </header>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white/90 shadow-sm rounded-xl p-4 text-center border border-white/40 backdrop-blur-sm">
-            <HeartPulse className="w-6 h-6 mx-auto text-[var(--sand-600)] mb-2" />
-            <h3 className="text-[var(--text-muted)] text-sm">Total de Consultas</h3>
-            <p className="text-lg font-bold text-[var(--ink)]">{total}</p>
-          </div>
-          <div className="bg-white/90 shadow-sm rounded-xl p-4 text-center border border-white/40 backdrop-blur-sm">
-            <Calendar className="w-6 h-6 mx-auto text-[var(--sand-600)] mb-2" />
-            <h3 className="text-[var(--text-muted)] text-sm">Próximas</h3>
-            <p className="text-lg font-bold text-[var(--ink)]">{futuros}</p>
-          </div>
-          <div className="bg-white/90 shadow-sm rounded-xl p-4 text-center border border-white/40 backdrop-blur-sm">
-            <ClipboardList className="w-6 h-6 mx-auto text-[var(--sand-600)] mb-2" />
-            <h3 className="text-[var(--text-muted)] text-sm">Confirmadas</h3>
-            <p className="text-lg font-bold text-[var(--ink)]">{confirmados}</p>
-          </div>
-          <div className="bg-white/90 shadow-sm rounded-xl p-4 text-center border border-white/40 backdrop-blur-sm">
-            <XCircle className="w-6 h-6 mx-auto text-[var(--sand-600)] mb-2" />
-            <h3 className="text-[var(--text-muted)] text-sm">Canceladas</h3>
-            <p className="text-lg font-bold text-[var(--ink)]">{cancelados}</p>
-          </div>
-        </section>
-
-        {proximoAgendamento && (
-          <section className="bg-[var(--sage-100)] border border-[var(--sage-300)] rounded-2xl p-5 shadow-sm backdrop-blur-sm">
-            <h2 className="text-lg font-semibold text-[var(--sand-600)] mb-2 flex items-center gap-2">
-              <Calendar className="w-5 h-5" /> Sua próxima consulta
-            </h2>
-            <div className="flex items-center gap-3">
-              <img
-                src={proximoAgendamento.profissional.fotoPerfil || "/default-doctor.png"}
-                alt="Médico"
-                className="w-14 h-14 rounded-full object-cover border"
-              />
-              <div>
-                <p className="font-medium text-[var(--ink)]">
-                  {proximoAgendamento.profissional.usuario.nome}
-                </p>
-                <p className="text-sm text-[var(--text-muted)]">
-                  {proximoAgendamento.profissional.especialidade?.nome}
-                </p>
-                <p className="flex items-center text-sm text-[var(--text-muted)] gap-1 mt-1">
-                  <Clock className="w-4 h-4" /> {new Date(proximoAgendamento.data).toLocaleString("pt-BR")}
-                </p>
-              </div>
-            </div>
-          </section>
-        )}
-
-        <section>
-          <h2 className="text-xl font-semibold text-[var(--ink)] mb-4 flex items-center gap-2">
-            <ClipboardList className="w-5 h-5 text-[var(--sand-600)]" /> Meus Agendamentos
-          </h2>
-
-          {agendamentos.length === 0 ? (
-            <div className="text-[var(--text-muted)] text-center py-10 bg-white/90 rounded-xl shadow-sm border border-white/40 backdrop-blur-sm">
-              <Stethoscope className="mx-auto w-10 h-10 text-[var(--sand-300)] mb-3" />
-              <p>Você ainda não possui consultas marcadas.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {agendamentos.map((a) => {
-                const statusAtual = getStatusAgendamento(a);
-                return (
-                  <div
-                    key={a.id}
-                    className="bg-white/90 rounded-xl shadow-sm border border-white/40 p-5 hover:shadow-md transition backdrop-blur-sm"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <img
-                        src={a.profissional.fotoPerfil || "/default-doctor.png"}
-                        alt="Médico"
-                        className="w-14 h-14 rounded-full object-cover border"
-                      />
-                      <div>
-                        <p className="font-semibold text-[var(--ink)]">{a.profissional.usuario.nome}</p>
-                        <p className="text-sm text-[var(--text-muted)]">
-                          {a.profissional.especialidade?.nome}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="text-[var(--text-muted)] text-sm flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-[var(--sand-300)]" />
-                      {new Date(a.data).toLocaleDateString("pt-BR")}
-                    </p>
-                    <p className="text-[var(--text-muted)] text-sm mb-2 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[var(--sand-300)]" />
-                      {new Date(a.data).toLocaleTimeString("pt-BR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-
-                    <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mb-3">
-                      <Mail className="w-4 h-4" />
-                      {a.profissional.usuario.email}
-                    </div>
-
-                    <span
-                      className={`inline-block px-3 py-1 text-xs font-semibold rounded-full mb-3 ${
-                        statusAtual === "CONFIRMADO"
-                          ? "bg-[var(--sage-100)] text-[var(--sand-600)]"
-                          : statusAtual === "CANCELADO"
-                          ? "bg-[#f8dcd6] text-[#a45a52]"
-                          : statusAtual === "EXPIRADO"
-                          ? "bg-[#d4a574] text-[#6b4423]"
-                          : statusAtual === "FINALIZADO"
-                          ? "bg-[var(--sand-300)] text-[var(--sand-700)]"
-                          : "bg-[var(--sand-200)] text-[var(--sand-600)]"
-                      }`}
-                    >
-                      {statusAtual}
-                    </span>
-
-                    {/* Mostrar anotações se o agendamento estiver finalizado e tiver observações */}
-                    {statusAtual === "FINALIZADO" && a.observacoes && (
-                      <div className="bg-[var(--sage-50)] border border-[var(--sage-200)] rounded-lg p-4 mb-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <ClipboardList className="w-4 h-4 text-[var(--sand-600)]" />
-                          <h4 className="text-sm font-semibold text-[var(--ink)]">Anotações do Profissional</h4>
-                        </div>
-                        <p className="text-sm text-[var(--text-muted)] whitespace-pre-wrap">
-                          {a.observacoes}
-                        </p>
-                      </div>
-                    )}
-
-                    {statusAtual === "FINALIZADO" && (!a.avaliacoes || a.avaliacoes.length === 0) && (
-                      <button
-                        onClick={() => abrirModalAvaliacao(a)}
-                        className="flex items-center gap-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:from-yellow-500 hover:to-yellow-600 transition shadow-sm"
-                      >
-                        <Star className="w-4 h-4" /> Avaliar Atendimento
-                      </button>
-                    )}
-
-                    {statusAtual !== "CANCELADO" && statusAtual !== "EXPIRADO" && statusAtual !== "FINALIZADO" && (
-                      <div className="flex gap-2">
-                        {statusAtual === "AGENDADO" && (
-                          <button
-                            onClick={() => handleConfirmar(a.id)}
-                            className="flex items-center gap-1 bg-[var(--sage-300)] text-[var(--sand-700)] px-3 py-1 rounded text-sm hover:bg-[var(--sage-100)] transition"
-                          >
-                            <CheckCircle className="w-4 h-4" /> Confirmar
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleCancelar(a.id)}
-                          className="flex items-center gap-1 bg-[var(--sand-500)] text-white px-3 py-1 rounded text-sm hover:bg-[var(--sand-600)] transition"
-                        >
-                          <XCircle className="w-4 h-4" /> Cancelar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
+        {/* Agendar nova consulta (movido para logo abaixo do perfil) */}
         <section className="bg-white/90 rounded-2xl shadow p-6 border border-white/40 backdrop-blur-sm">
           <h2 className="text-xl font-semibold text-[var(--ink)] mb-4">Agendar nova consulta</h2>
 
@@ -585,6 +429,197 @@ export default function DashboardPaciente() {
               Agendar
             </button>
           </form>
+        </section>
+
+        {/* Agendar nova consulta (logo abaixo do perfil) */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white/90 shadow-sm rounded-xl p-4 text-center border border-white/40 backdrop-blur-sm">
+            <HeartPulse className="w-6 h-6 mx-auto text-[var(--sand-600)] mb-2" />
+            <h3 className="text-[var(--text-muted)] text-sm">Total de Consultas</h3>
+            <p className="text-lg font-bold text-[var(--ink)]">{total}</p>
+          </div>
+          <div className="bg-white/90 shadow-sm rounded-xl p-4 text-center border border-white/40 backdrop-blur-sm">
+            <Calendar className="w-6 h-6 mx-auto text-[var(--sand-600)] mb-2" />
+            <h3 className="text-[var(--text-muted)] text-sm">Próximas</h3>
+            <p className="text-lg font-bold text-[var(--ink)]">{futuros}</p>
+          </div>
+          <div className="bg-white/90 shadow-sm rounded-xl p-4 text-center border border-white/40 backdrop-blur-sm">
+            <ClipboardList className="w-6 h-6 mx-auto text-[var(--sand-600)] mb-2" />
+            <h3 className="text-[var(--text-muted)] text-sm">Confirmadas</h3>
+            <p className="text-lg font-bold text-[var(--ink)]">{confirmados}</p>
+          </div>
+          <div className="bg-white/90 shadow-sm rounded-xl p-4 text-center border border-white/40 backdrop-blur-sm">
+            <XCircle className="w-6 h-6 mx-auto text-[var(--sand-600)] mb-2" />
+            <h3 className="text-[var(--text-muted)] text-sm">Canceladas</h3>
+            <p className="text-lg font-bold text-[var(--ink)]">{cancelados}</p>
+          </div>
+        </section>
+
+        {/* Legenda de status dos agendamentos */}
+        <section className="bg-white/80 rounded-xl border border-white/60 px-4 py-3 text-xs text-[var(--text-muted)] flex flex-wrap gap-3 items-center">
+          <span className="font-semibold text-[var(--ink)] mr-1">Legenda de status:</span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[var(--sand-200)] border border-[var(--sand-300)]" />
+            <span>AGENDADO</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[var(--sage-100)] border border-[var(--sage-200)]" />
+            <span>CONFIRMADO</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#f8dcd6] border border-[#f1b5aa]" />
+            <span>CANCELADO</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[#d4a574] border border-[#b57d45]" />
+            <span>EXPIRADO</span>
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-[var(--sand-300)] border border-[var(--sand-400)]" />
+            <span>FINALIZADO</span>
+          </span>
+        </section>
+
+        {proximoAgendamento && (
+          <section className="bg-[var(--sage-100)] border border-[var(--sage-300)] rounded-2xl p-5 shadow-sm backdrop-blur-sm">
+            <h2 className="text-lg font-semibold text-[var(--sand-600)] mb-2 flex items-center gap-2">
+              <Calendar className="w-5 h-5" /> Sua próxima consulta
+            </h2>
+            <div className="flex items-center gap-3">
+              <img
+                src={proximoAgendamento.profissional.fotoPerfil || "/default-doctor.png"}
+                alt="Médico"
+                className="w-14 h-14 rounded-full object-cover border"
+              />
+              <div>
+                <p className="font-medium text-[var(--ink)]">
+                  {proximoAgendamento.profissional.usuario.nome}
+                </p>
+                <p className="text-sm text-[var(--text-muted)]">
+                  {proximoAgendamento.profissional.especialidade?.nome}
+                </p>
+                <p className="flex items-center text-sm text-[var(--text-muted)] gap-1 mt-1">
+                  <Clock className="w-4 h-4" /> {new Date(proximoAgendamento.data).toLocaleString("pt-BR")}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <section>
+          <h2 className="text-xl font-semibold text-[var(--ink)] mb-4 flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-[var(--sand-600)]" /> Meus Agendamentos
+          </h2>
+
+          {agendamentos.length === 0 ? (
+            <div className="text-[var(--text-muted)] text-center py-10 bg-white/90 rounded-xl shadow-sm border border-white/40 backdrop-blur-sm">
+              <Stethoscope className="mx-auto w-10 h-10 text-[var(--sand-300)] mb-3" />
+              <p>Você ainda não possui consultas marcadas.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {agendamentos.map((a) => {
+                const statusAtual = getStatusAgendamento(a);
+                const jaAvaliado = Array.isArray(a.avaliacoes)
+                  ? a.avaliacoes.length > 0
+                  : !!a.avaliacoes;
+                return (
+                  <div
+                    key={a.id}
+                    className="bg-white/90 rounded-xl shadow-sm border border-white/40 p-5 hover:shadow-md transition backdrop-blur-sm"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <img
+                        src={a.profissional.fotoPerfil || "/default-doctor.png"}
+                        alt="Médico"
+                        className="w-14 h-14 rounded-full object-cover border"
+                      />
+                      <div>
+                        <p className="font-semibold text-[var(--ink)]">{a.profissional.usuario.nome}</p>
+                        <p className="text-sm text-[var(--text-muted)]">
+                          {a.profissional.especialidade?.nome}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-[var(--text-muted)] text-sm flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[var(--sand-300)]" />
+                      {new Date(a.data).toLocaleDateString("pt-BR")}
+                    </p>
+                    <p className="text-[var(--text-muted)] text-sm mb-2 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[var(--sand-300)]" />
+                      {new Date(a.data).toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+
+                    <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mb-3">
+                      <Mail className="w-4 h-4" />
+                      {a.profissional.usuario.email}
+                    </div>
+
+                    <span
+                      className={`inline-block px-3 py-1 text-xs font-semibold rounded-full mb-3 ${
+                        statusAtual === "CONFIRMADO"
+                          ? "bg-[var(--sage-100)] text-[var(--sand-600)]"
+                          : statusAtual === "CANCELADO"
+                          ? "bg-[#f8dcd6] text-[#a45a52]"
+                          : statusAtual === "EXPIRADO"
+                          ? "bg-[#d4a574] text-[#6b4423]"
+                          : statusAtual === "FINALIZADO"
+                          ? "bg-[var(--sand-300)] text-[var(--sand-700)]"
+                          : "bg-[var(--sand-200)] text-[var(--sand-600)]"
+                      }`}
+                    >
+                      {statusAtual}
+                    </span>
+
+                    {/* Mostrar anotações se o agendamento estiver finalizado e tiver observações */}
+                    {statusAtual === "FINALIZADO" && a.observacoes && (
+                      <div className="bg-[var(--sage-50)] border border-[var(--sage-200)] rounded-lg p-4 mb-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ClipboardList className="w-4 h-4 text-[var(--sand-600)]" />
+                          <h4 className="text-sm font-semibold text-[var(--ink)]">Anotações do Profissional</h4>
+                        </div>
+                        <p className="text-sm text-[var(--text-muted)] whitespace-pre-wrap">
+                          {a.observacoes}
+                        </p>
+                      </div>
+                    )}
+
+                    {statusAtual === "FINALIZADO" && !jaAvaliado && (
+                      <button
+                        onClick={() => abrirModalAvaliacao(a)}
+                        className="flex items-center gap-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-4 py-2 rounded-lg text-sm hover:from-yellow-500 hover:to-yellow-600 transition shadow-sm"
+                      >
+                        <Star className="w-4 h-4" /> Avaliar Atendimento
+                      </button>
+                    )}
+
+                    {statusAtual !== "CANCELADO" && statusAtual !== "EXPIRADO" && statusAtual !== "FINALIZADO" && (
+                      <div className="flex gap-2">
+                        {statusAtual === "AGENDADO" && (
+                          <button
+                            onClick={() => handleConfirmar(a.id)}
+                            className="flex items-center gap-1 bg-[var(--sage-300)] text-[var(--sand-700)] px-3 py-1 rounded text-sm hover:bg-[var(--sage-100)] transition"
+                          >
+                            <CheckCircle className="w-4 h-4" /> Confirmar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleCancelar(a.id)}
+                          className="flex items-center gap-1 bg-[var(--sand-500)] text-white px-3 py-1 rounded text-sm hover:bg-[var(--sand-600)] transition"
+                        >
+                          <XCircle className="w-4 h-4" /> Cancelar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Seção de Profissionais com Feedbacks */}
