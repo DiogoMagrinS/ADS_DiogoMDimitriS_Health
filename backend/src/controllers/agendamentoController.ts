@@ -220,47 +220,6 @@ export async function atualizarStatus(req: Request, res: Response) {
     });
 
     try {
-      const { enviarNotificacao } = await import('../services/notificacaoService');
-      if (status === 'FINALIZADO' && atualizado.paciente?.telefone) {
-        await enviarNotificacao({
-          tipo: 'POS_CONSULTA',
-          canal: 'WHATSAPP',
-          destinatario: {
-            idUsuario: atualizado.pacienteId,
-            tipoUsuario: atualizado.paciente.tipo,
-            nome: atualizado.paciente.nome,
-            telefone: atualizado.paciente.telefone,
-          },
-          conteudo: '',
-          meta: {
-            profissional: atualizado.profissional.usuario.nome,
-            observacoes: atualizado.observacoes,
-          },
-          agendamentoId: atualizado.id,
-        });
-      } else if (status === 'CONFIRMADO' && atualizado.paciente?.telefone) {
-        await enviarNotificacao({
-          tipo: 'CONFIRMACAO_PRESENCA',
-          canal: 'WHATSAPP',
-          destinatario: {
-            idUsuario: atualizado.pacienteId,
-            tipoUsuario: atualizado.paciente.tipo,
-            nome: atualizado.paciente.nome,
-            telefone: atualizado.paciente.telefone,
-          },
-          conteudo: '',
-          meta: {
-            data: new Date(atualizado.data).toLocaleString('pt-BR'),
-            profissional: atualizado.profissional.usuario.nome,
-          },
-          agendamentoId: atualizado.id,
-        });
-      }
-    } catch (e) {
-      console.warn('notificacaoService não disponível ou falhou (não crítico):', e);
-    }
-
-    try {
       const googleMod = await import('../services/googleCalendarService');
       if (status === 'CANCELADO' && agendamentoAntes.googleEventId) {
         if (googleMod && googleMod.deleteCalendarEvent) {

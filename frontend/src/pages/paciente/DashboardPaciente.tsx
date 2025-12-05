@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { getUserFromToken } from '../../utils/getUserFromToken';
+import { useAuth } from '../../hooks/useAuth';
 import { AxiosError } from 'axios';
 import { toast } from 'react-toastify';
 import {
@@ -15,6 +16,7 @@ import {
   CheckCircle,
   Star,
   X,
+  LogOut,
 } from 'lucide-react';
 import GlassPage from '../../components/GlassPage';
 
@@ -100,6 +102,7 @@ export default function DashboardPaciente() {
 
 
   const user = getUserFromToken();
+  const { logout } = useAuth();
   const dataMinima = new Date().toISOString().split('T')[0];
 
   // ============= CARREGAR DADOS INICIAIS =============
@@ -318,6 +321,21 @@ export default function DashboardPaciente() {
                 Aqui você pode acompanhar suas consultas e agendar novas.
               </p>
             </div>
+            <button
+              onClick={async () => {
+                try {
+                  await api.post('/auth/logout');
+                } catch (error) {
+                  console.warn('Erro ao chamar logout no backend:', error);
+                }
+                logout();
+              }}
+              className="mt-2 md:mt-0 flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm transition shadow-sm hover:shadow-md"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </button>
           </div>
         </header>
 

@@ -1,20 +1,9 @@
 // src/services/agendamentoService.ts
 // Correção: implementa funções exportadas (criar, listar, atualizar, excluir, listar por usuário/profissional, observar histórico, etc.)
-// Observação: usa imports dinâmicos para notificações e Google Calendar (não bloqueiam operação)
+// Observação: usa imports dinâmicos para Google Calendar (não bloqueiam operação)
 import { prisma } from '../config/prisma';
 import { StatusAgendamento, DiaSemana } from '@prisma/client';
 import { validarDataFutura } from '../utils/validators';
-
-async function enviarNotificacaoSegura(dados: any) {
-  try {
-    const mod = await import('./notificacaoService');
-    if (mod && mod.enviarNotificacao) {
-      await mod.enviarNotificacao(dados);
-    }
-  } catch (err) {
-    console.warn('enviarNotificacaoSegura falhou (não crítico):', err);
-  }
-}
 
 async function sincronizarGoogleCalendarSegura(acao: 'criar' | 'atualizar' | 'deletar', profissionalId: number, agendamentoId: number) {
   try {
@@ -135,51 +124,6 @@ export async function criarAgendamento(data: {
     }
   });
 
-  // busca info do profissional (usuario) para mensagens
-  const profissionalUsuario = await prisma.profissional.findUnique({
-    where: { id: data.profissionalId },
-    include: { usuario: true },
-  });
-
-  // envia notificações (não bloqueante)
-  if (paciente) {
-    await enviarNotificacaoSegura({
-      tipo: 'NOVO_AGENDAMENTO',
-      canal: 'WHATSAPP',
-      destinatario: {
-        idUsuario: paciente.id,
-        tipoUsuario: paciente.tipo,
-        nome: paciente.nome,
-        telefone: paciente.telefone || '',
-      },
-      conteudo: '',
-      meta: {
-        data: dataAgendamento.toLocaleString('pt-BR'),
-        profissional: profissionalUsuario?.usuario?.nome ?? null
-      },
-      agendamentoId: agendamento.id,
-    }).catch(() => {});
-  }
-
-  if (profissionalUsuario?.usuario) {
-    await enviarNotificacaoSegura({
-      tipo: 'NOVO_AGENDAMENTO_PROFISSIONAL',
-      canal: 'WHATSAPP',
-      destinatario: {
-        idUsuario: profissionalUsuario.usuario.id,
-        tipoUsuario: profissionalUsuario.usuario.tipo,
-        nome: profissionalUsuario.usuario.nome,
-        telefone: profissionalUsuario.usuario.telefone || '',
-      },
-      conteudo: '',
-      meta: {
-        data: dataAgendamento.toLocaleString('pt-BR'),
-        paciente: paciente.nome,
-      },
-      agendamentoId: agendamento.id,
-    }).catch(() => {});
-  }
-
   // sincroniza com Google Calendar (não bloqueante)
   await sincronizarGoogleCalendarSegura('criar', data.profissionalId, agendamento.id).catch(() => {});
 
@@ -244,66 +188,8 @@ export async function atualizarAgendamento(
     });
   }
 
-  // notificações se data mudou
-  const paciente = agendamentoExistente.paciente;
-  const profissionalUsuario = agendamentoExistente.profissional.usuario;
-  const dataMudou = dataAtualizada && dataAtualizada.getTime() !== new Date(dataAnterior).getTime();
-
-  if (dataMudou) {
-    const resumo = `Nova data/horário: ${dataAtualizada?.toLocaleString('pt-BR')}`;
-
-    if (paciente) {
-      await enviarNotificacaoSegura({
-        tipo: 'EDICAO',
-        canal: 'WHATSAPP',
-        destinatario: {
-          idUsuario: paciente.id,
-          tipoUsuario: paciente.tipo,
-          nome: paciente.nome,
-          telefone: paciente.telefone || '',
-        },
-        conteudo: `Seu agendamento foi atualizado. ${resumo}`,
-        meta: { agendamentoId: atualizado.id },
-        agendamentoId: atualizado.id,
-      }).catch(() => {});
-    }
-
-    if (profissionalUsuario) {
-      await enviarNotificacaoSegura({
-        tipo: 'EDICAO_PROFISSIONAL',
-        canal: 'WHATSAPP',
-        destinatario: {
-          idUsuario: profissionalUsuario.id,
-          tipoUsuario: profissionalUsuario.tipo,
-          nome: profissionalUsuario.nome,
-          telefone: profissionalUsuario.telefone,
-        },
-        conteudo: `Um agendamento da sua agenda foi atualizado. ${resumo}`,
-        meta: { agendamentoId: atualizado.id },
-        agendamentoId: atualizado.id,
-      }).catch(() => {});
-    }
-  }
-
-  if (dados.status && dados.status === StatusAgendamento.CANCELADO) {
-    if (profissionalUsuario) {
-      await enviarNotificacaoSegura({
-        tipo: 'CANCELAMENTO',
-        canal: 'WHATSAPP',
-        destinatario: {
-          idUsuario: profissionalUsuario.id,
-          tipoUsuario: profissionalUsuario.tipo,
-          nome: profissionalUsuario.nome,
-          telefone: profissionalUsuario.telefone,
-        },
-        conteudo: `Um agendamento foi cancelado (${agendamentoExistente.data.toLocaleString('pt-BR')}).`,
-        meta: { agendamentoId: atualizado.id },
-        agendamentoId: atualizado.id,
-      }).catch(() => {});
-    }
-  }
-
   // sincroniza com Google Calendar quando houver mudanças
+  const dataMudou = dataAtualizada && dataAtualizada.getTime() !== new Date(dataAnterior).getTime();
   // Se o status mudou para CANCELADO, remove o evento do Google Calendar
   if (statusAlterado && dados.status === StatusAgendamento.CANCELADO) {
     // Se já existe evento no Google Calendar, remove

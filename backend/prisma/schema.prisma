@@ -18,7 +18,6 @@ model Usuario {
   fotoPerfil       String?
   agendamentos     Agendamento[] @relation("PacienteAgendamentos")
   avaliacoesFeitas Avaliacao[]
-  notificacoes     Notificacao[]
   profissional     Profissional?
 }
 
@@ -55,7 +54,6 @@ model Agendamento {
   profissional    Profissional      @relation("ProfissionalAgendamentos", fields: [profissionalId], references: [id])
   avaliacoes      Avaliacao?
   historicoStatus HistoricoStatus[]
-  notificacoes    Notificacao[]
 }
 
 model HistoricoStatus {
@@ -85,25 +83,6 @@ model Avaliacao {
   profissional   Profissional @relation(fields: [profissionalId], references: [id])
 }
 
-model Notificacao {
-  id               Int               @id @default(autoincrement())
-  tipo             TipoNotificacao
-  canal            CanalNotificacao
-  destinatarioId   Int
-  destinatarioTipo TipoUsuario
-  conteudo         String
-  meta             Json              @default("{}")
-  status           StatusNotificacao
-  detalhesErro     String?
-  criadoEm         DateTime          @default(now())
-  agendamentoId    Int?
-  agendamento      Agendamento?      @relation(fields: [agendamentoId], references: [id])
-  destinatario     Usuario           @relation(fields: [destinatarioId], references: [id])
-
-  @@index([destinatarioId])
-  @@index([agendamentoId])
-}
-
 enum TipoUsuario {
   PACIENTE
   PROFISSIONAL
@@ -125,22 +104,4 @@ enum StatusAgendamento {
   CONFIRMADO
   CANCELADO
   FINALIZADO
-}
-
-enum TipoNotificacao {
-  LEMBRETE
-  CANCELAMENTO
-  EDICAO
-  POS_CONSULTA
-  CONFIRMACAO_PRESENCA
-}
-
-enum CanalNotificacao {
-  WHATSAPP
-}
-
-enum StatusNotificacao {
-  CRIADA
-  ENVIADA
-  FALHOU
 }
